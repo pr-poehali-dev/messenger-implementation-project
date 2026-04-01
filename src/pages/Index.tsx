@@ -1,454 +1,534 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 
-const Index = () => {
-  const [email, setEmail] = useState("");
-  const [hovered, setHovered] = useState<number | null>(null);
+interface Message {
+  id: number;
+  text: string;
+  time: string;
+  mine: boolean;
+  read: boolean;
+}
 
-  const features = [
-    {
-      icon: "Zap",
-      title: "Молниеносная скорость",
-      desc: "Запускаем проекты в 30 раз быстрее традиционной разработки. Идея сегодня — сайт завтра.",
-    },
-    {
-      icon: "Layers",
-      title: "Готовые компоненты",
-      desc: "Библиотека профессиональных блоков для любого типа бизнеса. Выбирай и собирай.",
-    },
-    {
-      icon: "Shield",
-      title: "Надёжно и стабильно",
-      desc: "Производительный хостинг, SSL-сертификат и техподдержка включены в каждый тариф.",
-    },
-    {
-      icon: "Sparkles",
-      title: "ИИ на вашей стороне",
-      desc: "Искусственный интеллект помогает дорабатывать сайт по вашим пожеланиям в чате.",
-    },
-    {
-      icon: "Globe",
-      title: "Своё доменное имя",
-      desc: "Подключите любой домен в несколько кликов или получите бесплатный поддомен.",
-    },
-    {
-      icon: "TrendingUp",
-      title: "SEO из коробки",
-      desc: "Все страницы оптимизированы для поисковых систем с первого дня запуска.",
-    },
-  ];
+interface Chat {
+  id: number;
+  name: string;
+  avatar: string;
+  lastMsg: string;
+  time: string;
+  unread: number;
+  online: boolean;
+  messages: Message[];
+}
 
-  const stats = [
-    { value: "30×", label: "быстрее разработки" },
-    { value: "2 000+", label: "запущенных проектов" },
-    { value: "98%", label: "довольных клиентов" },
-    { value: "24/7", label: "поддержка и мониторинг" },
-  ];
+const initialChats: Chat[] = [
+  {
+    id: 1,
+    name: "Аня Петрова",
+    avatar: "А",
+    lastMsg: "Окей, буду к семи! 🎉",
+    time: "14:23",
+    unread: 2,
+    online: true,
+    messages: [
+      { id: 1, text: "Привет! Ты придёшь на вечеринку?", time: "14:10", mine: false, read: true },
+      { id: 2, text: "Да, конечно! А что принести?", time: "14:15", mine: true, read: true },
+      { id: 3, text: "Ничего, только себя 😊", time: "14:18", mine: false, read: true },
+      { id: 4, text: "Начало в 19:00, адрес скину позже", time: "14:20", mine: false, read: true },
+      { id: 5, text: "Окей, буду к семи! 🎉", time: "14:23", mine: false, read: false },
+    ],
+  },
+  {
+    id: 2,
+    name: "Максим Козлов",
+    avatar: "М",
+    lastMsg: "Посмотрю вечером",
+    time: "13:05",
+    unread: 0,
+    online: true,
+    messages: [
+      { id: 1, text: "Привет, как дела?", time: "12:50", mine: true, read: true },
+      { id: 2, text: "Норм, работаю над проектом", time: "12:55", mine: false, read: true },
+      { id: 3, text: "Скинул тебе файлы в облако", time: "13:00", mine: true, read: true },
+      { id: 4, text: "Посмотрю вечером", time: "13:05", mine: false, read: true },
+    ],
+  },
+  {
+    id: 3,
+    name: "Команда дизайн",
+    avatar: "🎨",
+    lastMsg: "Катя: принято, делаю правки",
+    time: "12:41",
+    unread: 5,
+    online: false,
+    messages: [
+      { id: 1, text: "Добрый день! Нужно обсудить новый макет", time: "11:00", mine: false, read: true },
+      { id: 2, text: "Да, давайте. Что именно?", time: "11:15", mine: true, read: true },
+      { id: 3, text: "Кнопки CTA слишком мелкие на мобайле", time: "11:30", mine: false, read: true },
+      { id: 4, text: "Согласен, увеличу размер и padding", time: "12:00", mine: true, read: true },
+      { id: 5, text: "Катя: принято, делаю правки", time: "12:41", mine: false, read: false },
+    ],
+  },
+  {
+    id: 4,
+    name: "Дима Волков",
+    avatar: "Д",
+    lastMsg: "Спасибо за помощь!",
+    time: "вчера",
+    unread: 0,
+    online: false,
+    messages: [
+      { id: 1, text: "Можешь помочь с кодом?", time: "вчера", mine: false, read: true },
+      { id: 2, text: "Конечно, что нужно?", time: "вчера", mine: true, read: true },
+      { id: 3, text: "Разобрался, всё окей", time: "вчера", mine: false, read: true },
+      { id: 4, text: "Спасибо за помощь!", time: "вчера", mine: false, read: true },
+    ],
+  },
+  {
+    id: 5,
+    name: "Оля Смирнова",
+    avatar: "О",
+    lastMsg: "Увидимся на следующей неделе",
+    time: "вчера",
+    unread: 0,
+    online: false,
+    messages: [
+      { id: 1, text: "Встреча перенеслась на пятницу", time: "вчера", mine: false, read: true },
+      { id: 2, text: "Ок, записала", time: "вчера", mine: true, read: true },
+      { id: 3, text: "Увидимся на следующей неделе", time: "вчера", mine: false, read: true },
+    ],
+  },
+  {
+    id: 6,
+    name: "Сергей Иванов",
+    avatar: "С",
+    lastMsg: "👍",
+    time: "пн",
+    unread: 0,
+    online: false,
+    messages: [
+      { id: 1, text: "Отчёт готов, проверь пожалуйста", time: "пн", mine: true, read: true },
+      { id: 2, text: "👍", time: "пн", mine: false, read: true },
+    ],
+  },
+];
+
+const avatarColors: Record<string, string> = {
+  "А": "#ef4444",
+  "М": "#3b82f6",
+  "Д": "#8b5cf6",
+  "О": "#ec4899",
+  "С": "#f59e0b",
+  "🎨": "#10b981",
+};
+
+export default function Index() {
+  const [chats, setChats] = useState<Chat[]>(initialChats);
+  const [activeChatId, setActiveChatId] = useState<number>(1);
+  const [input, setInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const activeChat = chats.find((c) => c.id === activeChatId)!;
+  const filtered = chats.filter((c) =>
+    c.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [activeChat?.messages.length, activeChatId]);
+
+  const sendMessage = () => {
+    if (!input.trim()) return;
+    const now = new Date();
+    const time = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
+    const newMsg: Message = {
+      id: Date.now(),
+      text: input.trim(),
+      time,
+      mine: true,
+      read: false,
+    };
+    setChats((prev) =>
+      prev.map((c) =>
+        c.id === activeChatId
+          ? { ...c, messages: [...c.messages, newMsg], lastMsg: input.trim(), time }
+          : c
+      )
+    );
+    setInput("");
+    inputRef.current?.focus();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  const selectChat = (id: number) => {
+    setActiveChatId(id);
+    setChats((prev) =>
+      prev.map((c) =>
+        c.id === id
+          ? { ...c, unread: 0, messages: c.messages.map((m) => ({ ...m, read: true })) }
+          : c
+      )
+    );
+    if (window.innerWidth < 768) setSidebarOpen(false);
+  };
+
+  const totalUnread = chats.reduce((acc, c) => acc + c.unread, 0);
 
   return (
     <div
-      className="min-h-screen font-golos text-white overflow-x-hidden"
-      style={{
-        background: "linear-gradient(135deg, #0a0a0f 0%, #0f0d1a 40%, #0a0f1a 100%)",
-      }}
+      className="h-screen flex overflow-hidden font-golos"
+      style={{ background: "#0e0e14" }}
     >
-      {/* Background orbs */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div
-          className="absolute animate-pulse-glow"
-          style={{
-            width: "600px",
-            height: "600px",
-            borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(245,158,11,0.12) 0%, transparent 70%)",
-            top: "-200px",
-            right: "-100px",
-          }}
-        />
-        <div
-          className="absolute animate-pulse-glow"
-          style={{
-            width: "500px",
-            height: "500px",
-            borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%)",
-            bottom: "10%",
-            left: "-150px",
-            animationDelay: "1.5s",
-          }}
-        />
-        <div
-          className="absolute animate-pulse-glow"
-          style={{
-            width: "300px",
-            height: "300px",
-            borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(245,158,11,0.08) 0%, transparent 70%)",
-            top: "50%",
-            left: "45%",
-            animationDelay: "3s",
-          }}
-        />
-      </div>
-
-      {/* Nav */}
-      <nav
-        className="relative z-50 flex items-center justify-between px-6 md:px-16 py-6"
-        style={{ borderBottom: "1px solid rgba(245,158,11,0.08)" }}
+      {/* Sidebar */}
+      <div
+        className={`flex flex-col flex-shrink-0 transition-all duration-300 ${
+          sidebarOpen ? "w-80" : "w-0 md:w-16"
+        } overflow-hidden`}
+        style={{
+          background: "#13131c",
+          borderRight: "1px solid rgba(255,255,255,0.06)",
+        }}
       >
-        <div className="flex items-center gap-2">
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)" }}
-          >
-            <span className="text-black font-bold text-sm">П</span>
-          </div>
-          <span className="font-bold text-lg tracking-tight">Поехали</span>
-        </div>
-        <div className="hidden md:flex items-center gap-8 text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>
-          <a href="#features" className="hover:text-white transition-colors">Возможности</a>
-          <a href="#stats" className="hover:text-white transition-colors">Результаты</a>
-          <a href="#cta" className="hover:text-white transition-colors">Тарифы</a>
-        </div>
-        <button
-          className="px-5 py-2 rounded-full text-sm font-semibold transition-all duration-300 hover:scale-105"
-          style={{
-            background: "linear-gradient(135deg, #f59e0b, #d97706)",
-            color: "#0a0a0f",
-          }}
-        >
-          Начать бесплатно
-        </button>
-      </nav>
-
-      {/* Hero */}
-      <section className="relative z-10 text-center px-6 pt-20 pb-28 md:pt-28 md:pb-36">
-        {/* Badge */}
+        {/* Sidebar Header */}
         <div
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-8 animate-fade-in"
-          style={{
-            background: "rgba(245,158,11,0.1)",
-            border: "1px solid rgba(245,158,11,0.3)",
-            animationDelay: "0.1s",
-            opacity: 0,
-          }}
+          className="flex items-center justify-between px-4 py-4 flex-shrink-0"
+          style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-gold-400 animate-pulse" />
-          <span className="text-xs font-medium" style={{ color: "#fbbf24" }}>
-            Новая эра веб-разработки
-          </span>
-        </div>
-
-        {/* Headline */}
-        <h1
-          className="font-cormorant font-semibold leading-none mb-6 animate-fade-in"
-          style={{
-            fontSize: "clamp(3rem, 8vw, 7rem)",
-            animationDelay: "0.2s",
-            opacity: 0,
-          }}
-        >
-          Сайт вашей мечты —{" "}
-          <span
-            className="italic"
-            style={{
-              background: "linear-gradient(90deg, #fbbf24, #f59e0b, #fcd34d, #f59e0b, #fbbf24)",
-              backgroundSize: "200% auto",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              animation: "shimmer 3s linear infinite",
-            }}
-          >
-            за один день
-          </span>
-        </h1>
-
-        {/* Subheadline */}
-        <p
-          className="text-lg md:text-xl max-w-2xl mx-auto mb-10 animate-fade-in"
-          style={{
-            color: "rgba(255,255,255,0.55)",
-            lineHeight: "1.7",
-            animationDelay: "0.4s",
-            opacity: 0,
-          }}
-        >
-          Мы создаём профессиональные сайты с помощью ИИ — быстро, красиво и без технических знаний.
-          Просто опишите идею, и мы воплотим её в жизнь.
-        </p>
-
-        {/* CTA buttons */}
-        <div
-          className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in"
-          style={{ animationDelay: "0.6s", opacity: 0 }}
-        >
-          <button
-            className="group flex items-center gap-2 px-8 py-4 rounded-full font-semibold text-base transition-all duration-300 hover:scale-105 hover:shadow-2xl"
-            style={{
-              background: "linear-gradient(135deg, #f59e0b, #d97706)",
-              color: "#0a0a0f",
-              boxShadow: "0 0 40px rgba(245,158,11,0.3)",
-            }}
-          >
-            Запустить проект
-            <Icon name="ArrowRight" size={18} className="group-hover:translate-x-1 transition-transform" />
-          </button>
-          <button
-            className="flex items-center gap-2 px-8 py-4 rounded-full font-semibold text-base transition-all duration-300 hover:scale-105"
-            style={{
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              color: "rgba(255,255,255,0.85)",
-            }}
-          >
-            <Icon name="Play" size={16} />
-            Смотреть демо
-          </button>
-        </div>
-
-        {/* Floating geometric decoration */}
-        <div className="absolute top-20 left-10 opacity-20 animate-float hidden lg:block" style={{ animationDelay: "0s" }}>
-          <div
-            className="w-16 h-16 rounded-2xl"
-            style={{
-              background: "linear-gradient(135deg, rgba(245,158,11,0.4), transparent)",
-              border: "1px solid rgba(245,158,11,0.3)",
-              transform: "rotate(15deg)",
-            }}
-          />
-        </div>
-        <div className="absolute top-32 right-12 opacity-15 animate-float hidden lg:block" style={{ animationDelay: "2s" }}>
-          <div
-            className="w-10 h-10 rounded-full"
-            style={{
-              background: "rgba(99,102,241,0.5)",
-              border: "1px solid rgba(99,102,241,0.4)",
-            }}
-          />
-        </div>
-        <div className="absolute bottom-16 left-1/4 opacity-10 animate-float hidden lg:block" style={{ animationDelay: "4s" }}>
-          <div
-            className="w-20 h-1"
-            style={{ background: "linear-gradient(90deg, transparent, #f59e0b, transparent)" }}
-          />
-        </div>
-      </section>
-
-      {/* Stats */}
-      <section
-        id="stats"
-        className="relative z-10 px-6 md:px-16 py-16"
-        style={{ borderTop: "1px solid rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.04)" }}
-      >
-        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
-          {stats.map((s, i) => (
+          <div className="flex items-center gap-2">
             <div
-              key={i}
-              className="text-center animate-fade-in"
-              style={{ animationDelay: `${0.1 * i}s`, opacity: 0 }}
+              className="w-8 h-8 rounded-xl flex items-center justify-center text-sm font-bold"
+              style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}
             >
-              <div
-                className="font-cormorant font-bold mb-1"
-                style={{
-                  fontSize: "clamp(2rem, 4vw, 3rem)",
-                  background: "linear-gradient(135deg, #fbbf24, #f59e0b)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >
-                {s.value}
-              </div>
-              <div className="text-sm" style={{ color: "rgba(255,255,255,0.45)" }}>
-                {s.label}
-              </div>
+              ✦
             </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Features */}
-      <section id="features" className="relative z-10 px-6 md:px-16 py-24">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <p
-              className="text-xs font-semibold tracking-widest uppercase mb-4"
-              style={{ color: "#f59e0b" }}
-            >
-              Почему Поехали
-            </p>
-            <h2
-              className="font-cormorant font-semibold"
-              style={{ fontSize: "clamp(2rem, 4vw, 3.5rem)", lineHeight: "1.1" }}
-            >
-              Всё что нужно —
-              <br />
-              <span className="italic" style={{ color: "rgba(255,255,255,0.5)" }}>в одном месте</span>
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {features.map((f, i) => (
-              <div
-                key={i}
-                className="group relative p-6 rounded-2xl cursor-default transition-all duration-500 animate-fade-in"
-                style={{
-                  background: hovered === i
-                    ? "rgba(245,158,11,0.07)"
-                    : "rgba(255,255,255,0.03)",
-                  border: hovered === i
-                    ? "1px solid rgba(245,158,11,0.25)"
-                    : "1px solid rgba(255,255,255,0.06)",
-                  animationDelay: `${0.1 * i}s`,
-                  opacity: 0,
-                  transform: hovered === i ? "translateY(-4px)" : "none",
-                  boxShadow: hovered === i ? "0 20px 60px rgba(245,158,11,0.08)" : "none",
-                }}
-                onMouseEnter={() => setHovered(i)}
-                onMouseLeave={() => setHovered(null)}
+            <span className="font-bold text-white text-base">Вихрь</span>
+            {totalUnread > 0 && (
+              <span
+                className="text-xs font-bold px-1.5 py-0.5 rounded-full"
+                style={{ background: "#6366f1", color: "#fff", minWidth: "18px", textAlign: "center" }}
               >
-                <div
-                  className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 transition-all duration-300"
-                  style={{
-                    background: hovered === i
-                      ? "linear-gradient(135deg, #f59e0b, #d97706)"
-                      : "rgba(245,158,11,0.12)",
-                  }}
-                >
-                  <Icon
-                    name={f.icon}
-                    fallback="Star"
-                    size={20}
-                    style={{ color: hovered === i ? "#0a0a0f" : "#f59e0b" }}
-                  />
-                </div>
-                <h3 className="font-semibold text-base mb-2">{f.title}</h3>
-                <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>
-                  {f.desc}
-                </p>
+                {totalUnread}
+              </span>
+            )}
+          </div>
+          <button
+            className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-white/10"
+            style={{ color: "rgba(255,255,255,0.4)" }}
+          >
+            <Icon name="Edit" size={16} />
+          </button>
+        </div>
 
-                {/* Corner accent */}
-                <div
-                  className="absolute top-0 right-0 w-16 h-16 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                  style={{
-                    background: "radial-gradient(circle at top right, rgba(245,158,11,0.15), transparent 70%)",
-                    borderRadius: "0 1rem 0 0",
-                  }}
-                />
-              </div>
-            ))}
+        {/* Search */}
+        <div className="px-3 py-3 flex-shrink-0">
+          <div
+            className="flex items-center gap-2 rounded-xl px-3 py-2"
+            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)" }}
+          >
+            <Icon name="Search" size={14} style={{ color: "rgba(255,255,255,0.3)" }} />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Поиск..."
+              className="bg-transparent text-sm outline-none flex-1 placeholder:text-white/30 text-white/80"
+            />
           </div>
         </div>
-      </section>
 
-      {/* Divider with label */}
-      <div className="relative z-10 flex items-center gap-6 px-6 md:px-16 py-4">
-        <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.05)" }} />
-        <span className="text-xs font-semibold tracking-widest uppercase" style={{ color: "rgba(255,255,255,0.2)" }}>
-          Начни сегодня
-        </span>
-        <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.05)" }} />
-      </div>
-
-      {/* CTA Section */}
-      <section id="cta" className="relative z-10 px-6 md:px-16 py-24">
-        <div
-          className="max-w-3xl mx-auto text-center rounded-3xl p-12 md:p-16 relative overflow-hidden"
-          style={{
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(245,158,11,0.15)",
-          }}
-        >
-          {/* BG glow inside card */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background: "radial-gradient(ellipse at center top, rgba(245,158,11,0.07) 0%, transparent 65%)",
-            }}
-          />
-
-          <div className="relative z-10">
-            <div
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6"
+        {/* Chat List */}
+        <div className="flex-1 overflow-y-auto scrollbar-thin">
+          {filtered.map((chat) => (
+            <button
+              key={chat.id}
+              onClick={() => selectChat(chat.id)}
+              className="w-full flex items-center gap-3 px-3 py-3 transition-all duration-150 text-left group"
               style={{
-                background: "rgba(245,158,11,0.1)",
-                border: "1px solid rgba(245,158,11,0.25)",
+                background: activeChatId === chat.id
+                  ? "rgba(99,102,241,0.15)"
+                  : "transparent",
+                borderLeft: activeChatId === chat.id
+                  ? "2px solid #6366f1"
+                  : "2px solid transparent",
               }}
             >
-              <Icon name="Rocket" size={14} style={{ color: "#fbbf24" }} />
-              <span className="text-xs font-semibold" style={{ color: "#fbbf24" }}>
-                Бесплатный старт
-              </span>
-            </div>
+              {/* Avatar */}
+              <div className="relative flex-shrink-0">
+                <div
+                  className="w-11 h-11 rounded-2xl flex items-center justify-center text-lg font-semibold text-white"
+                  style={{
+                    background: avatarColors[chat.avatar] || "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                    fontSize: chat.avatar.length > 1 ? "20px" : "15px",
+                  }}
+                >
+                  {chat.avatar}
+                </div>
+                {chat.online && (
+                  <span
+                    className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2"
+                    style={{ background: "#22c55e", borderColor: "#13131c" }}
+                  />
+                )}
+              </div>
 
-            <h2
-              className="font-cormorant font-semibold mb-4"
-              style={{ fontSize: "clamp(2rem, 4vw, 3rem)", lineHeight: "1.15" }}
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-0.5">
+                  <span className="font-semibold text-sm text-white/90 truncate">{chat.name}</span>
+                  <span className="text-xs flex-shrink-0 ml-2" style={{ color: "rgba(255,255,255,0.3)" }}>
+                    {chat.time}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs truncate" style={{ color: "rgba(255,255,255,0.4)" }}>
+                    {chat.lastMsg}
+                  </span>
+                  {chat.unread > 0 && (
+                    <span
+                      className="ml-2 flex-shrink-0 text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center"
+                      style={{ background: "#6366f1", color: "#fff" }}
+                    >
+                      {chat.unread}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        {/* Bottom nav */}
+        <div
+          className="flex items-center justify-around px-4 py-3 flex-shrink-0"
+          style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
+        >
+          {[
+            { icon: "MessageSquare", active: true },
+            { icon: "Users", active: false },
+            { icon: "Phone", active: false },
+            { icon: "Settings", active: false },
+          ].map(({ icon, active }) => (
+            <button
+              key={icon}
+              className="w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-150"
+              style={{
+                background: active ? "rgba(99,102,241,0.2)" : "transparent",
+                color: active ? "#818cf8" : "rgba(255,255,255,0.3)",
+              }}
             >
-              Готовы запустить
-              <br />
-              <span className="italic" style={{ color: "#fbbf24" }}>ваш проект?</span>
-            </h2>
+              <Icon name={icon} size={18} />
+            </button>
+          ))}
+        </div>
+      </div>
 
-            <p className="text-base mb-10" style={{ color: "rgba(255,255,255,0.5)", lineHeight: "1.7" }}>
-              Оставьте email — и мы свяжемся с вами в течение часа.
-              <br />
-              Первая консультация бесплатно.
-            </p>
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Chat Header */}
+        <div
+          className="flex items-center gap-3 px-4 py-3 flex-shrink-0"
+          style={{
+            background: "#13131c",
+            borderBottom: "1px solid rgba(255,255,255,0.06)",
+          }}
+        >
+          <button
+            onClick={() => setSidebarOpen((v) => !v)}
+            className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-white/10 md:hidden"
+            style={{ color: "rgba(255,255,255,0.5)" }}
+          >
+            <Icon name="Menu" size={18} />
+          </button>
 
-            <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="ваш@email.com"
-                className="flex-1 px-5 py-3.5 rounded-full text-sm outline-none transition-all duration-300"
-                style={{
-                  background: "rgba(255,255,255,0.05)",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  color: "white",
-                }}
-                onFocus={(e) => (e.target.style.border = "1px solid rgba(245,158,11,0.5)")}
-                onBlur={(e) => (e.target.style.border = "1px solid rgba(255,255,255,0.12)")}
+          <div className="relative flex-shrink-0">
+            <div
+              className="w-10 h-10 rounded-2xl flex items-center justify-center font-semibold text-white"
+              style={{
+                background: avatarColors[activeChat.avatar] || "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                fontSize: activeChat.avatar.length > 1 ? "18px" : "14px",
+              }}
+            >
+              {activeChat.avatar}
+            </div>
+            {activeChat.online && (
+              <span
+                className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2"
+                style={{ background: "#22c55e", borderColor: "#13131c" }}
               />
+            )}
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-white text-sm">{activeChat.name}</div>
+            <div className="text-xs" style={{ color: activeChat.online ? "#22c55e" : "rgba(255,255,255,0.35)" }}>
+              {activeChat.online ? "онлайн" : "был(а) недавно"}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <button
+              className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-white/10"
+              style={{ color: "rgba(255,255,255,0.4)" }}
+            >
+              <Icon name="Phone" size={16} />
+            </button>
+            <button
+              className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-white/10"
+              style={{ color: "rgba(255,255,255,0.4)" }}
+            >
+              <Icon name="Video" size={16} />
+            </button>
+            <button
+              className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-white/10"
+              style={{ color: "rgba(255,255,255,0.4)" }}
+            >
+              <Icon name="MoreVertical" size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* Messages */}
+        <div
+          className="flex-1 overflow-y-auto px-4 py-6 space-y-1"
+          style={{
+            background: "#0e0e14",
+            backgroundImage: `radial-gradient(ellipse at 20% 50%, rgba(99,102,241,0.03) 0%, transparent 60%),
+              radial-gradient(ellipse at 80% 20%, rgba(139,92,246,0.03) 0%, transparent 60%)`,
+          }}
+        >
+          {/* Date divider */}
+          <div className="flex items-center gap-3 my-4">
+            <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.05)" }} />
+            <span className="text-xs px-3" style={{ color: "rgba(255,255,255,0.25)" }}>сегодня</span>
+            <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.05)" }} />
+          </div>
+
+          {activeChat.messages.map((msg, index) => {
+            const prev = activeChat.messages[index - 1];
+            const showName = !msg.mine && (!prev || prev.mine);
+
+            return (
+              <div
+                key={msg.id}
+                className={`flex ${msg.mine ? "justify-end" : "justify-start"} animate-fade-in`}
+                style={{ animationDuration: "0.2s", marginBottom: "2px" }}
+              >
+                <div
+                  className={`max-w-[70%] flex flex-col ${msg.mine ? "items-end" : "items-start"}`}
+                >
+                  <div
+                    className="px-4 py-2.5 text-sm leading-relaxed"
+                    style={
+                      msg.mine
+                        ? {
+                            background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                            color: "#fff",
+                            borderRadius: "18px 18px 4px 18px",
+                          }
+                        : {
+                            background: "rgba(255,255,255,0.07)",
+                            color: "rgba(255,255,255,0.9)",
+                            border: "1px solid rgba(255,255,255,0.06)",
+                            borderRadius: "18px 18px 18px 4px",
+                          }
+                    }
+                  >
+                    {msg.text}
+                  </div>
+                  <div
+                    className="flex items-center gap-1 px-1 mt-1"
+                    style={{ color: "rgba(255,255,255,0.25)" }}
+                  >
+                    <span className="text-xs">{msg.time}</span>
+                    {msg.mine && (
+                      <Icon
+                        name={msg.read ? "CheckCheck" : "Check"}
+                        size={12}
+                        style={{ color: msg.read ? "#818cf8" : "rgba(255,255,255,0.3)" }}
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input Area */}
+        <div
+          className="px-4 py-3 flex-shrink-0"
+          style={{
+            background: "#13131c",
+            borderTop: "1px solid rgba(255,255,255,0.06)",
+          }}
+        >
+          <div
+            className="flex items-center gap-2 rounded-2xl px-4 py-2"
+            style={{
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.08)",
+            }}
+          >
+            <button
+              className="w-7 h-7 rounded-full flex items-center justify-center transition-colors hover:bg-white/10 flex-shrink-0"
+              style={{ color: "rgba(255,255,255,0.35)" }}
+            >
+              <Icon name="Smile" size={18} />
+            </button>
+
+            <input
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Напишите сообщение..."
+              className="flex-1 bg-transparent text-sm outline-none text-white/90 placeholder:text-white/25 py-1"
+            />
+
+            <button
+              className="w-7 h-7 rounded-full flex items-center justify-center transition-colors hover:bg-white/10 flex-shrink-0"
+              style={{ color: "rgba(255,255,255,0.35)" }}
+            >
+              <Icon name="Paperclip" size={16} />
+            </button>
+
+            {input.trim() ? (
               <button
-                className="px-7 py-3.5 rounded-full font-semibold text-sm transition-all duration-300 hover:scale-105 hover:shadow-2xl whitespace-nowrap"
+                onClick={sendMessage}
+                className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 flex-shrink-0"
                 style={{
-                  background: "linear-gradient(135deg, #f59e0b, #d97706)",
-                  color: "#0a0a0f",
-                  boxShadow: "0 0 30px rgba(245,158,11,0.25)",
+                  background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                  color: "#fff",
                 }}
               >
-                Поехали! 🚀
+                <Icon name="Send" size={14} />
               </button>
-            </div>
-
-            <p className="text-xs mt-5" style={{ color: "rgba(255,255,255,0.25)" }}>
-              Никакого спама. Только результат.
-            </p>
+            ) : (
+              <button
+                className="w-8 h-8 rounded-full flex items-center justify-center transition-colors hover:bg-white/10 flex-shrink-0"
+                style={{ color: "rgba(255,255,255,0.35)" }}
+              >
+                <Icon name="Mic" size={16} />
+              </button>
+            )}
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* Footer */}
-      <footer
-        className="relative z-10 text-center py-10 px-6"
-        style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}
-      >
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <div
-            className="w-6 h-6 rounded-md flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)" }}
-          >
-            <span className="text-black font-bold text-xs">П</span>
-          </div>
-          <span className="font-semibold text-sm">Поехали</span>
-        </div>
-        <p className="text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>
-          © 2025 Поехали. Создаём сайты быстро и красиво.
-        </p>
-      </footer>
+      <style>{`
+        .scrollbar-thin::-webkit-scrollbar { width: 4px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+      `}</style>
     </div>
   );
-};
-
-export default Index;
+}
